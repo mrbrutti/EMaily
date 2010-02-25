@@ -1,0 +1,67 @@
+require 'rubygems'
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--input','-i', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--output','-o', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+opts.each do |opt, arg|
+  case opt
+    when '--help' then
+      # BEGIN OF HELP
+      puts "nHELP for qp_decoder\n---------------------\n"
+      puts "--help, -h"
+      puts "\tWell I guess you know what this is for (To obtain this Help).\n"
+      puts "--input, -i"
+      puts "\tFile to convert.\n"
+      puts "--output, -o"
+      puts "\tFile to save. (Otherwise, it will overwrite input)\n"
+      puts "Copyright 2010 - FreedomCoder\n"
+      #END OF HELP
+      exit(0)
+    when '--input' then
+      @in = arg
+    when '--output' then
+      @out = arg
+    else
+      puts "option not recognized.\n"
+      exit(1)
+    end
+end
+
+class QuotedPrintable
+  def initialize(input,output)
+    @text = ""
+    @data = File.readlines(input)
+    @input = input
+    @output = output
+  end
+  
+  def decode
+    @data.each do |line|
+      @text << from_qp(line.chomp + "\r\n") + "\r\n"
+    end
+  end
+  
+  def save
+    File.open((@output || @input), "w") {|x| x << @text }
+  end
+  
+  private
+  def from_qp(line)
+    result = line.gsub(/=\r\n/, "")
+    result.gsub!(/\r\n/m, $/)
+    result.gsub!(/=([\dA-F]{2})/) { $1.hex.chr }
+    result
+  end
+end
+
+x = QuotedPrintable.new(@in, @out || nil)
+x.decode
+x.save
+
+puts "\n------------------------"
+puts "Happy Hacking :)\nGood Bye.\n"
+  
