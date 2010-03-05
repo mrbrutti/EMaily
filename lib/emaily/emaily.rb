@@ -20,15 +20,17 @@ module EMaily
       EMaily.log = args[:log] if args[:log]
       @servers = Servers.load
       #variables
-      @list = CSV.parse(args[:file])
-      args[:attachment] ? @attach = args[:attachment].split(",") : @attach = []
+      @list = CSV.parse(args[:list])
+      @attach = args[:attachment] || []
       @from = args[:from]
-      @content_type = args[:content_type] || 'text/html; charset=UTF-8'
+      @content_type = args[:content_type] || 'text/html; charset=UTF-8;'
       @template = Template.new(args[:template], @content_type)
+      @ports = @template.ports
       @subject = @template.subject || args[:subject] 
-      @serv = []; args[:server].split(",").each {|s| @serv << @servers[s] }
+      @serv = []; args[:servers].each {|s| @serv << @servers[s][0][:values] }
       setup_server(@serv[0])
     end
+    attr_accessor :list, :from, :content_type, :subject, :serv, :ports
     
     def self.start(file, &block)
       self.new(file)
@@ -36,7 +38,7 @@ module EMaily
     end
         
     def send
-      @list.each  {|p| connect p[:email], generate_email(p) }
+      @list.each {|p| connect p[:email], generate_email(p) }
     end
         
     def send_block(bloc = 1, rest = nil, &block)
@@ -66,34 +68,33 @@ module EMaily
       @template.generate_email(data)
     end
     
-    def setup_server(server, user = nil, pass = nil)
-      Mail.defaults do 
-        smtp server[:uri], server[:port] do 
-          user server[:user] if server[:user] 
-          pwd  server[:pass] if server[:pass]
-        end
+    def setup_server(server)
+      Mail.defaults { delivery_method :smtp, server }
     end
     
     def connect(email, template)
       begin
-        Mail.deliver do
-          to email
-          from @from
-          subject @subject
-          if @template.is_text? ## TO BE IMPLEMENTED
-            text_part do
-              body template
-            end
-          elsif @template.is_html?
-            html_part do
-              content_type @content_type
-              body template
-            end
-          end
-          @attach.each do |file|
-            add_file file
+        mail = Mail.new
+        mail.to email
+        mail.from @from
+        mail.subject @subject
+        if @template.is_text?
+          mail.text_part { body template }
+        else
+          mail.text_part do
+        	  body 'This mail should be rendered or viewed as HTML'
           end
         end
+        if @template.is_html?
+          mail.html_part do
+        	  content_type 'text/html; charset=UTF-8'
+            body template
+          end
+        end
+        @attach.each do |file|
+          m.add_file file
+        end
+        mail.deliver
         D "Successfully sent #{email}"
       rescue
         D "Something went wrong sending #{email}"

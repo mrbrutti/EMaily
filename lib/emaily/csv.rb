@@ -9,10 +9,11 @@ module EMaily
       lines.each_with_index do |line, i|
         list[i] = {}
         line.chop.split(",").each_with_index do |val, idx|
-          list[i][fields[idx].to_sym] = val.strip
+          list[i][fields[idx].strip.to_sym] = val.strip
         end
       end
       list
     end
   end
 end
+

@@ -1,3 +1,11 @@
+#!/usr/bin/env ruby 
+#  -wKU
+#  qp_decoder
+#  
+#  Created by FreedomCoder on 2010-1-26.
+#  Copyright 2010 FreedomCoder's Labs. All rights reserved.
+#
+
 require 'rubygems'
 require 'getoptlong'
 

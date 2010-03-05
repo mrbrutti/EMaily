@@ -11,19 +11,24 @@ require 'getoptlong'
 require 'emaily'
 
 EMaily::log = true
+@data = {}
+@server = {}
+@ports = nil
 
 opts = GetoptLong.new(
   [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--version', '-v', GetoptLong::NO_ARGUMENT ],
   [ '--nolog', GetoptLong::NO_ARGUMENT ],
   [ '--show-templates', GetoptLong::NO_ARGUMENT ],
-  [ '--webserver', GetoptLong::NO_ARGUMENT ], # TBI
   [ '--random', GetoptLong::NO_ARGUMENT ], 
-  [ '--skydrive', GetoptLong::NO_ARGUMENT ], # TBI
+  [ '--skydrive', GetoptLong::NO_ARGUMENT ],
   [ '--remove-server', GetoptLong::NO_ARGUMENT ],
   [ '--add-server', GetoptLong::NO_ARGUMENT ],
     [ '--name','-n', GetoptLong::REQUIRED_ARGUMENT ],
     [ '--uri','-w', GetoptLong::REQUIRED_ARGUMENT ],
     [ '--port','-p', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--domain','-d', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--authentication', GetoptLong::REQUIRED_ARGUMENT ],
     [ '--ssl', GetoptLong::NO_ARGUMENT],
     [ '--user','-U', GetoptLong::REQUIRED_ARGUMENT ],
     [ '--pass','-P', GetoptLong::REQUIRED_ARGUMENT ],
@@ -36,93 +41,153 @@ opts = GetoptLong.new(
   [ '--attachment','-a', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--content-type','-c', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--output','-o', GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ]
+  [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--webserver', GetoptLong::NO_ARGUMENT ],
+  [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
 )
+
+def logo()
+  if  RUBY_PLATFORM =~ /mingw|mswin/ 
+    puts "___________              .__.__          "
+    puts "\\_   _____/ _____ _____  |__|  | ___.__."
+    puts "|    __)_ /     \\__  \\ |  |  |<   |  |"
+    puts "|        \\  Y Y  \\/ __ \\|  |  |_\\___  |"
+    puts "/_______  /__|_|  (____  /__|____/ ____|"
+    puts "        \\/      \\/     \\/        \\/"
+  else
+    puts "\033[31m___________\033\[0m              .__.__          "
+    puts "\033[31m\\_   _____/\033\[0m_____ _____   |__|  | ___.__."
+    puts "\033[31m|    __)\033\[0m _/     \\__   \\  |  |  |<   |  |"
+    puts "\033[31m|        \\\033\[0m   Y Y  \\/ __ \\|  |  |_\\___  |"
+    puts "\033[31m/_______  /\033\[0m__|_|  (____  /__|____/ ____|   "
+    puts "\033[31m        \\/\033\[0m      \\/     \\/        \\/    "
+  end
+end
 
 opts.each do |opt, arg|
   case opt
     when '--help' then
       # BEGIN OF HELP
-      puts "nHELP for Esearchy\n---------------------\n"
-      puts "--help, -h"
-      puts "\tWell I guess you know what this is for (To obtain this Help).\n"
-      puts "--nolog"
-      puts "\tTells EMaily not to output to STDOUT.\n"
-      puts "ADD SERVER:"
-      puts "--add-server "
-      puts "\t --name, -n [name]\n"
-      puts "\t\t The name we will use to refer it.\n"
-      puts "\t --uri, -w [smtp.server.com]"
-      puts "\t\t The smtp server uri.\n"
-      puts "\t--port, -p [number]"
-      puts "\t\t The server port.\n"
-      puts "\t--ssl"
-      puts "\t\t The server security\n"
-      puts "--user, -U [username]"
-      puts "\t The server username .\n"
-      puts "--pass, -P [password]"
-      puts "\t The server password .\n\n"
-      puts "INPUT VARIABLES"
-      puts "--show-templates\n"
-      puts "\t Shows a list of available templates and needed fields"
-      puts "--template, -t [name/path]\n"
-      puts "\t The template path or name"
-      puts "--from, -f [email address] "
-      puts "\tEmail address of who is sending the emails.\n"
-      puts "--subject, -s [subject]"
-      puts "\t The email subject. If using Templates this is not necesary\n"
-      puts "--list, -l"
-      puts "\tThe CSV file that will populate the templates.\n"
-      puts "--attachment, -a [file1,file2,file3]\n"
-      puts "\t The attachment file/s \n"
-      puts "--content-type, -c [text/html; charset=UTF-8]"
-      puts "\t The content type used on the email. Default: text/html; charset=UTF-8\n"
-      puts "--server, -S [server1,server2,server3]\n"
-      puts "\t The server/s to send emails\n"
+      logo()
+      puts "\n\nHELP for EMaily\n---------------------\n"
+      puts "   --help, -h"
+      puts "   \tWell I guess you know what this is for (To obtain this Help).\n"
+      puts "   --nolog"
+      puts "   \tTells EMaily not to output to STDOUT.\n"
+      puts "   ADD SERVER:"
+      puts "   --add-server "
+      puts "   \t --name, -n [name]\n"
+      puts "   \t\t The name we will use to refer it.\n"
+      puts "   \t --uri, -w [smtp.server.com]"
+      puts "   \t\t The smtp server's uri.\n"
+      puts "   \t--port, -p [number]"
+      puts "   \t\t The server's port.\n"
+      puts "   \t--domain, -d [domain]"
+      puts "   \t\t The user's domain.\n"
+      puts "   \t--authentication [type]"
+      puts "   \t\t The server's authentication type.\n"
+      puts "   \t--ssl"
+      puts "   \t\t The server's security\n"
+      puts "   --user, -U [username]"
+      puts "   \t The server's username .\n"
+      puts "   --pass, -P [password]"
+      puts "   \t The server's password .\n\n"
+      puts "   INPUT VARIABLES"
+      puts "   --show-templates\n"
+      puts "   \t Shows a list of available templates and needed fields"
+      puts "   --template, -t [name/path]\n"
+      puts "   \t The template path or name"
+      puts "   --from, -f [email address] "
+      puts "   \tEmail address of who is sending the emails.\n"
+      puts "   --subject, -s [subject]"
+      puts "   \t The email subject. If using Templates this is not necesary\n"
+      puts "   --list, -l"
+      puts "   \tThe CSV file that will populate the templates.\n"
+      puts "   --attachment, -a [file1,file2,file3]\n"
+      puts "   \t The attachment file/s \n"
+      puts "   --content-type, -c [text/html; charset=UTF-8]"
+      puts "   \t The content type used on the email. Default: 'text/html; charset=UTF-8'.\n"
+      puts "   --server, -S [server1,server2,server3]\n"
+      puts "   \t The server/s to send emails\n"
+      puts "   --block, -b"
+      puts "   \t Size of email blocks to send at one time.\n"
+      puts "   --random\n"
+      puts "   \t Randomly chooses among servers.\n"
+      puts "   --sleep. -z"
+      puts "   \t Sleep time among blocks of emails.\n"
+      puts "   --webserver"
+      puts "   \t Creates a web server to listen on ports declared by --scan_ports.\n"
+      puts "   --scanports [80,443,8080,22]"
+      puts "   \t Add scan payload to scan for list of ports.\n"
+      puts "   --site"
+      puts "   \t If not using local webserver a site is required.\n"
       puts "Copyright 2010 - FreedomCoder\n"
       #END OF HELP
       exit(0)
-    when '--add-server' then
-      @add_server = true
+    when '--version' then
+      logo()
+      puts "EMaily version #{EMaily::VERSION}"
+      exit(0)
     when '--nolog' then
       EMaily::log = false
+    # ADD / REMOVE SERVER
+    when '--add-server' then
+      @add_server = true
     when '--remove-server' then
       @remove_server = true
     when '--name' then
-      @name = arg
+      @server_name = arg
     when '--uri' then
-      @uri = arg
+      @server[:address] = arg
     when '--port' then
-      @port = arg
+      @server[:port] = arg.to_i
+    when '--domain' then
+      @server[:domain] = arg
     when '--user' then
-      @user = arg
+      @server[:user_name] = arg
+    when '--authentication' then
+      @server[:authentication] = arg
+    when '--pass' then
+      @server[:password] = arg
+    when '--ssl' then
+      @server[:enable_starttls_auto] = true
+    # END ADD / REMOVE SERVER
     when '--block' then
       @block = arg.to_i
     when '--sleep' then
       @sleep = arg.to_i
     when '--random' then
       @random = true
-    when '--pass' then
-      @pass = arg
-    when '--ssl' then
-      @ssl = true
     when '--template' then
-      @template = arg
+      if File.exist?(arg)
+        @data[:template] = arg
+      else
+        puts "The template path/file does not exists"
+        exit(0)
+      end
     when '--from' then
       @data[:from] = arg
     when '--subject' then
       @data[:subject] = arg
     when '--list' then
-      @data[:list] = list
+      @data[:list] = arg
     when '--show-templates' then
+      logo
       show_templates
       exit(0)
     when '--attachment' then
-      @data[:attachment] = arg.split(",")
+      @data[:attachment] = arg.chomp.split(",")
     when '--content-type' then
       @data[:content_type] = arg
     when '--server' then
-      @data[:servers] = arg.split(",")
+      @data[:servers] = arg.chomp.split(",")
+    when '--webserver' then
+      @webserver = true
+    when '--scanports' then
+        @ports = arg.split(",").map {|p| p.to_i} if arg != nil
+    when '--site' then
+      @site = arg
     else
       puts "Unknown command. Please try again"
       exit(0)
@@ -131,19 +196,13 @@ end
 
 def add_server
   servers = EMaily::Servers.load
-  values  = {}
-  values[:uri] = @uri if @uri
-  values[:port] = @port if @port
-  values[:user] = @user if @user
-  values[:pass] = @pass if @pass
-  values[:ssl] = @ssl  if @ssl
-  servers.create(@name, values)
-  server.flush
+  servers.create(@server_name, @server)
+  servers.flush
 end
 
 def remove_server
   servers = EMaily::Servers.load
-  servers.delete(@name)
+  servers.delete(@server_name)
   server.flush
 end
 
@@ -151,42 +210,36 @@ def check_template(name)
   Gem.path.each do |path|
     if File.exist?(path + "/emaily-#{EMaily::VERSION}/templates/#{name}.html")
       return path + "/emaily-#{EMaily::VERSION}/templates/#{name}.html"
-    else
-      return false
+    end
+  end
+  return false
+end
+
+def show_templates
+  puts "Templates:"
+  Gem.path.each do |path|
+    Dir[path + "/emaily-#{EMaily::VERSION}/templates/**/*.*"].each_with_index do |t,idx|
+      puts "\t" + idx + ") " + t
     end
   end
 end
 
-def show_templates
-  puts "To Be Implemented..."
-end
-
 def execute
-  session = Emaily::Email.new(@data)
-  if @servers.size < 2
-    @block != nil ? session.send_block(@block, @sleep) : session.send
+  @session = EMaily::Email.new(@data)
+  if @session.serv.size < 2
+    @block != nil ? @session.send_block(@block, @sleep) : @session.send
   elsif @random
-    session.send_to_random_servers(@block, @sleep)
+    @session.send_to_random_servers(@block, @sleep)
   else
-    session.send_to_servers(@block, @sleep)
+    @session.send_to_servers(@block, @sleep)
   end
 end
-
-
-if  RUBY_PLATFORM =~ /mingw|mswin/ 
-  puts "___________              .__.__          "
-  puts "\\_   _____/ _____ _____  |__|  | ___.__."
-  puts "|    __)_ /     \\__  \\ |  |  |<   |  |"
-  puts "|        \\  Y Y  \\/ __ \\|  |  |_\\___  |"
-  puts "/_______  /__|_|  (____  /__|____/ ____|"
-  puts "        \\/      \\/     \\/        \\/"
-else
-  puts "\033[31m___________\033\[0m              .__.__            "
-  puts "\033[31m\\_   _____/\033\[0m _____ _____  |__|  | ___.__.  "
-  puts "\033[31m|    __)\033\[0m _/     \\__   \\ |  |  |<   |  |  "
-  puts "\033[31m|        \\\033\[0m   Y Y  \\/ __ \\|  |  |_\\___  |"
-  puts "\033[31m/_______  /\033\[0m__|_|  (____  /__|____/ ____|   "
-  puts "\033[31m        \\/\033\[0m      \\/     \\/        \\/    "
+def webserver
+  @webserver = EMaily::WebServers.new(@ports || @session.ports)
+  @webserver.create_scan_server
+  @webserver.run
+end
+logo()
 puts "\n"                                            
 puts "DISCLOSURE: This code is not bug free. If you find one do not hesitate to report it."
 puts "All bugs are greatly appreciate it."
@@ -195,19 +248,27 @@ puts "------------------------------------------------------------------------"
 if @add_server
   add_server
   D "Server #{@name} created."
+  exit(1)
 elsif @remove_server
   remove_server
   D "Server #{@name} deleted."
+  exit(1)
 end
 
-if @servers.empty?
+if @data[:servers] == nil
   D "You need to add at least 1 server."
   exit(0)
+end
+
+if @webserver
+  webserver
 end
 
 unless @data.empty?
   execute
 end
+
+
 
 puts "\n------------------------"
 puts "Happy Hacking :)\nGood Bye.\n"

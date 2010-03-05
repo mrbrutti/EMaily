@@ -4,7 +4,7 @@ require 'yaml'
 
 require 'emaily/csv'
 require 'emaily/servers'
-require 'emaily/webserver'
+require 'emaily/webservers'
 require 'emaily/templates'
 require 'emaily/emaily'
 
