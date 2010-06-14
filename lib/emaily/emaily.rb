@@ -2,6 +2,17 @@ def D m
   puts m if EMaily::log
 end
 
+class Array
+  def / len
+    a = []
+    each_with_index do |x,i|
+      a << [] if i % len == 0
+      a.last << x
+    end
+    a
+  end
+end
+
 module EMaily
   @@log = false
   @@status = true
@@ -57,28 +68,22 @@ module EMaily
     end
         
     def send_block(bloc = 1, rest = 0, &block)
-      j = 0
-      while (j <= @list.size) do
-        @list[j..((j = until_this(j,bloc))-1)].each do |p| 
-          connect p[:email], generate_email(p)
-        end
-        sleep(rest) if rest
+      (@list / bloc).each do |b|
+        b.each { |p| connect p[:email], generate_email(p) }
+        sleep(rest) if rest != 0 && rest != nil
         block.call(self) if block_given?
       end
     end
     
     def send_to_random_servers(bloc = 1, rest = 0)
-      send_block bloc, rest { setup_server(@serv[rand(@serv.size)]) }
+      send_block(bloc, rest) { setup_server(@serv[rand(@serv.size)]) }
     end
     
     def send_to_servers(bloc = 1, rest = 0)
-      @v=0; send_block bloc, rest { setup_server(@serv[(@v += 1) % @serv.size]) }
+      @v=0; send_block(bloc, rest) { setup_server(@serv[(@v += 1) % @serv.size]) }
     end
     
     private
-    def until_this(j, bloc)
-      j + bloc < @list.size ? j + bloc : @list.size
-    end
     
     def generate_email(data)
       @template.generate_email(data)
@@ -86,12 +91,10 @@ module EMaily
     
     def setup_server(server)
       Mail.defaults { delivery_method :smtp, server }
-      if @from.nil?
+      if @from.nil? || (@from != server[:user_name] && server[:user_name].match(/@/))
         @from = server[:user_name]
       elsif server[:user_name].nil?
         @from = server[:reply_to]
-      elsif @from != server[:user_name] && server[:user_name].match(/@/)
-        @from = server[:user_name]
       else
         @from = @o_from || "anonymous@#{server[:domain]}"
       end

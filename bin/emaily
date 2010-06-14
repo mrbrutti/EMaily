@@ -241,9 +241,9 @@ def execute
   if @session.serv.size < 2
     @block != nil ? @session.send_block(@block, @sleep) : @session.send
   elsif @random
-    @session.send_to_random_servers(@block, @sleep)
+    @session.send_to_random_servers(@block || 1, @sleep)
   else
-    @session.send_to_servers(@block, @sleep)
+    @session.send_to_servers(@block || 1, @sleep)
   end
   if @webserver
     puts "If you no longer want to listen for incomming connecionts."
