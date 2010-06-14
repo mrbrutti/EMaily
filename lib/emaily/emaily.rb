@@ -4,7 +4,16 @@ end
 
 module EMaily
   @@log = false
-  VERSION = 0.1
+  @@status = true
+  VERSION = 0.2
+  
+  def self.status
+    @@status
+  end
+  
+  def self.status=(v)
+    @@status=v
+  end
   
   def self.log
     @@log
@@ -22,13 +31,19 @@ module EMaily
       #variables
       @list = CSV.parse(args[:list])
       @attach = args[:attachment] || []
-      @from = args[:from]
+      @o_from = @from = args[:from]
       @content_type = args[:content_type] || 'text/html; charset=UTF-8;'
       @template = Template.new(args[:template], @content_type)
+      @template.bidly = args[:bidly] || false
       @ports = @template.ports
-      @subject = @template.subject || args[:subject] 
-      @serv = []; args[:servers].each {|s| @serv << @servers[s][0][:values] }
-      setup_server(@serv[0])
+      @template.site = args[:site] if args[:site]
+      @subject = @template.subject || args[:subject]
+      if args[:servers]
+        @serv = []; args[:servers].each {|s| @serv << @servers[s][0][:values] }
+        setup_server(@serv[0])
+      else
+        setup_server(@servers[0][0][:values])
+      end
     end
     attr_accessor :list, :from, :content_type, :subject, :serv, :ports
     
@@ -38,13 +53,15 @@ module EMaily
     end
         
     def send
-      @list.each {|p| connect p[:email], generate_email(p) }
+      @list.each { |p| connect(p[:email], generate_email(p)) }
     end
         
-    def send_block(bloc = 1, rest = nil, &block)
+    def send_block(bloc = 1, rest = 0, &block)
       j = 0
       while (j <= @list.size) do
-        @list[j..(j = until_this(j,bloc))].each {|p| connect p[:email], generate_email(p)}
+        @list[j..((j = until_this(j,bloc))-1)].each do |p| 
+          connect p[:email], generate_email(p)
+        end
         sleep(rest) if rest
         block.call(self) if block_given?
       end
@@ -54,14 +71,13 @@ module EMaily
       send_block bloc, rest { setup_server(@serv[rand(@serv.size)]) }
     end
     
-    def send_to_servers
-      @v = 0
-      send_block bloc, rest { setup_server(@serv[(@v += 1) % @serv.size]) }
+    def send_to_servers(bloc = 1, rest = 0)
+      @v=0; send_block bloc, rest { setup_server(@serv[(@v += 1) % @serv.size]) }
     end
     
     private
-    def until_this(j, block)
-      j + bloc > @list.size ? j + bloc : @list.size
+    def until_this(j, bloc)
+      j + bloc < @list.size ? j + bloc : @list.size
     end
     
     def generate_email(data)
@@ -70,9 +86,18 @@ module EMaily
     
     def setup_server(server)
       Mail.defaults { delivery_method :smtp, server }
+      if @from.nil?
+        @from = server[:user_name]
+      elsif server[:user_name].nil?
+        @from = server[:reply_to]
+      elsif @from != server[:user_name] && server[:user_name].match(/@/)
+        @from = server[:user_name]
+      else
+        @from = @o_from || "anonymous@#{server[:domain]}"
+      end
     end
     
-    def connect(email, template)
+    def connect(email,template)
       begin
         mail = Mail.new
         mail.to email
@@ -92,12 +117,12 @@ module EMaily
           end
         end
         @attach.each do |file|
-          m.add_file file
+          mail.add_file file
         end
         mail.deliver
         D "Successfully sent #{email}"
       rescue
-        D "Something went wrong sending #{email}"
+        D "Something went wrong sending #{email}\nError: #{$!}\n"
       end
     end
   end

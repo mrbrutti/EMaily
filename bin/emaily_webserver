@@ -1,0 +1,89 @@
+#!/usr/bin/env ruby 
+#  -wKU
+#  emaily_webserver
+#  
+#  Created by FreedomCoder on 2010-3-6.
+#  Copyright 2010 FreedomCoder's Labs. All rights reserved.
+#
+
+require 'rubygems'
+require 'getoptlong'
+require 'webrick'
+require '../lib/emaily'
+
+module EMaily
+  class WebServers
+    SHOW_FORMAT = "+ Response from %h:%p\n|--> User-Agent: %{User-agent}i"
+  end
+end
+
+EMaily::log = true
+EMaily::status = true 
+@server = {}
+@ports = nil
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--type','-t', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--ports','-p', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--path','-x', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+opts.each do |opt, arg|
+  case opt
+    when '--help' then
+      # BEGIN OF HELP
+      puts "nHELP for emaily_webserver\n---------------------\n"
+      puts "--help, -h"
+      puts "\tWell I guess you know what this is for (To obtain this Help).\n"
+      puts "--type, -t"
+      puts "\tType of Webserver to start [Scan | host].\n"
+      puts "--ports, -p"
+      puts "\tList of ports in which Server should listen. (default 80)\n"
+      puts "--path, -x"
+      puts "\tServer's root document path. (default .)\n"
+      puts "Copyright 2010 - FreedomCoder\n"
+      #END OF HELP
+      exit(0)
+    when '--ports' then
+      @ports = arg.split(",").map {|p| p.to_i}
+    when '--type' then
+      case arg
+      when /scan/i then 
+        @type = :scan
+      when /host/i then
+        @type = :host
+      else
+        puts "Unrecognized type #{arg}. Should be [scan | host]."
+        puts "bye."
+        exit(1)
+      end
+    when '--path' then 
+      @path = arg
+    else
+      puts "option not recognized.\n"
+      exit(1)
+    end
+end
+
+webserver = EMaily::WebServers.new(@ports || 80)
+case @type
+when :scan
+  webserver.create_scan_server
+when :host
+  webserver.path = @path if @path
+  webserver.create_server
+end
+trap("INT") do 
+  webserver.stop
+  webserver.parsedata
+  EMaily::status = false
+end
+webserver.run
+
+while EMaily::status
+  sleep(1)
+end
+puts "If you no longer want to listen for incomming connecionts."
+puts "Press Control + C to close EMaily StandAlone Server."
+

@@ -5,7 +5,7 @@
 
 module EMaily
   class Template
-    def initialize(template, content_type, ports=nil,site=nil)
+    def initialize(template, content_type, ports=nil, site=nil)
       file = File.readlines(template)
       if file[0].match(/<subject>/)
         @s = file[0].scan(/<subject>(.*)<\/subject>/)[0][0]
@@ -21,7 +21,7 @@ module EMaily
       end
       @site = site
     end
-    attr_accessor :ports
+    attr_accessor :ports, :bidly
     attr_reader :site
     
     def generate_email(values)
@@ -58,9 +58,23 @@ module EMaily
     def generate_scan_ports(identifier)
       pl = ""
       @ports.each do |port|
-        pl << "<img src=\"#{@site||("http://"+local_ip)}:#{port}/#{port}.jpg?e=#{identifier}\"/>\n"
+        pl << "<img src=\"#{site(port,identifier)}\"/>\n"
       end
       pl
+    end
+    
+    def site(port,identifier)
+      url = "#{ @site || ("http://"+local_ip) }:#{port}/#{port}.jpg?e=#{identifier}"
+      begin
+        @bidly ? bidly(url) : url
+      rescue
+        url
+      end
+    end
+    
+    # Future bitly URL shortten to hide Scan URLs ( I think this will only work with domains)
+    def bitly(link)
+      open( 'http://bit.ly/api?url=' + link ).read
     end
     
     def local_ip

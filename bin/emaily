@@ -11,6 +11,7 @@ require 'getoptlong'
 require 'emaily'
 
 EMaily::log = true
+EMaily::status = true
 @data = {}
 @server = {}
 @ports = nil
@@ -32,6 +33,7 @@ opts = GetoptLong.new(
     [ '--ssl', GetoptLong::NO_ARGUMENT],
     [ '--user','-U', GetoptLong::REQUIRED_ARGUMENT ],
     [ '--pass','-P', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--reply','-R', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--template','-t', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--list','-l', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--from','-f', GetoptLong::REQUIRED_ARGUMENT ],
@@ -43,6 +45,7 @@ opts = GetoptLong.new(
   [ '--output','-o', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--webserver', GetoptLong::NO_ARGUMENT ],
+  [ '--bidly', GetoptLong::NO_ARGUMENT ],
   [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
 )
@@ -152,6 +155,8 @@ opts.each do |opt, arg|
       @server[:password] = arg
     when '--ssl' then
       @server[:enable_starttls_auto] = true
+    when '--reply' then
+      @server[:reply_to] = arg
     # END ADD / REMOVE SERVER
     when '--block' then
       @block = arg.to_i
@@ -186,8 +191,10 @@ opts.each do |opt, arg|
       @webserver = true
     when '--scanports' then
         @ports = arg.split(",").map {|p| p.to_i} if arg != nil
+    when '--bidly' then
+        @data[:bidly] = true
     when '--site' then
-      @site = arg
+      @data[:site] = arg
     else
       puts "Unknown command. Please try again"
       exit(0)
@@ -226,6 +233,11 @@ end
 
 def execute
   @session = EMaily::Email.new(@data)
+  if @webserver
+    webserver = EMaily::WebServers.new(@ports || @session.ports)
+    webserver.create_scan_server
+    webserver.run
+  end
   if @session.serv.size < 2
     @block != nil ? @session.send_block(@block, @sleep) : @session.send
   elsif @random
@@ -233,12 +245,20 @@ def execute
   else
     @session.send_to_servers(@block, @sleep)
   end
+  if @webserver
+    puts "If you no longer want to listen for incomming connecionts."
+    puts "Press Control + C to close EMaily"
+    trap("INT") do 
+      webserver.stop
+      webserver.parsedata
+      EMaily::status = false
+    end
+    while EMaily::status
+      sleep(1)
+    end
+  end
 end
-def webserver
-  @webserver = EMaily::WebServers.new(@ports || @session.ports)
-  @webserver.create_scan_server
-  @webserver.run
-end
+
 logo()
 puts "\n"                                            
 puts "DISCLOSURE: This code is not bug free. If you find one do not hesitate to report it."
@@ -260,15 +280,9 @@ if @data[:servers] == nil
   exit(0)
 end
 
-if @webserver
-  webserver
-end
-
 unless @data.empty?
   execute
 end
-
-
 
 puts "\n------------------------"
 puts "Happy Hacking :)\nGood Bye.\n"
