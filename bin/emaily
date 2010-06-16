@@ -46,6 +46,7 @@ opts = GetoptLong.new(
   [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--webserver', GetoptLong::NO_ARGUMENT ],
   [ '--bidly', GetoptLong::NO_ARGUMENT ],
+  [ '--thread', '-T' , GetoptLong::NO_ARGUMENT ],
   [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
 )
@@ -193,6 +194,8 @@ opts.each do |opt, arg|
         @ports = arg.split(",").map {|p| p.to_i} if arg != nil
     when '--bidly' then
         @data[:bidly] = true
+    when '--thread' then
+        @thread = true
     when '--site' then
       @data[:site] = arg
     else
@@ -239,11 +242,11 @@ def execute
     webserver.run
   end
   if @session.serv.size < 2
-    @block != nil ? @session.send_block(@block, @sleep) : @session.send
+    @block != nil ? @session.send_block(@block, @sleep, @thread || false) : @session.send
   elsif @random
-    @session.send_to_random_servers(@block || 1, @sleep)
+    @session.send_to_random_servers(@block || 1, @sleep, @thread || false)
   else
-    @session.send_to_servers(@block || 1, @sleep)
+    @session.send_to_servers(@block || 1, @sleep, @thread || false)
   end
   if @webserver
     puts "If you no longer want to listen for incomming connecionts."

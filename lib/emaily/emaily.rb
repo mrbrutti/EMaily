@@ -67,20 +67,36 @@ module EMaily
       @list.each { |p| connect(p[:email], generate_email(p)) }
     end
         
-    def send_block(bloc = 1, rest = 0, &block)
-      (@list / bloc).each do |b|
-        b.each { |p| connect p[:email], generate_email(p) }
-        sleep(rest) if rest != 0 && rest != nil
-        block.call(self) if block_given?
+   #def send_block(bloc = 1, rest = 0, &block)
+   #  (@list / bloc).each do |b|
+   #    setup_server(block.call(self)) if block_given?
+   #    b.each { |p| connect p[:email], generate_email(p) }
+   #    sleep(rest) if rest != 0 && rest != nil
+   #  end
+   #end
+    
+   def send_block(bloc = 1, rest = 0, thread = false, &block) 
+     threads = []
+     (@list / bloc).each do |b|
+       block.call(self) if block_given?
+       if thread        
+         threads << Thread.new { b.each { |p| connect p[:email], generate_email(p)}}
+       else
+         b.each { |p| connect p[:email], generate_email(p) }
+       end
+     end
+     threads.each { |t| t.join }
+   end
+    
+    def send_to_random_servers(bloc = 1, rest = 0, thread = false)
+      send_block(bloc, rest, thread) { setup_server(@serv[rand(@serv.size)]) }
+    end
+    
+    def send_to_servers(bloc = 1, rest = 0, thread = false)
+      @v=0; send_block(bloc, rest, thread) do
+        setup_server(@serv[@v % @serv.size]);  
+        @v += 1
       end
-    end
-    
-    def send_to_random_servers(bloc = 1, rest = 0)
-      send_block(bloc, rest) { setup_server(@serv[rand(@serv.size)]) }
-    end
-    
-    def send_to_servers(bloc = 1, rest = 0)
-      @v=0; send_block(bloc, rest) { setup_server(@serv[(@v += 1) % @serv.size]) }
     end
     
     private
