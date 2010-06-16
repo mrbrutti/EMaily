@@ -70,6 +70,8 @@ x = QuotedPrintable.new(@in, @out || nil)
 x.decode
 x.save
 
+puts "FILE \" #{@in} \""
+puts "DECODED into \" #{@out} \""
 puts "\n------------------------"
 puts "Happy Hacking :)\nGood Bye.\n"
   
