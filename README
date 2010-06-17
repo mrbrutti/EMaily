@@ -1,4 +1,4 @@
-= Esearch
+= EMaily
 
 == DESCRIPTION
 EMaily is a CLI tool caplable of sending multiple templated emails using different mail server. It is part of a bigger social Enginering Framework I'm creating which involves ( ESearchy-ng, ETwitty, etc ..)
@@ -65,7 +65,7 @@ For thouse who want to integrate this to their application you can use it in "th
 
 (The MIT License)
 
-Copyright (c) 2008 - 2009:
+Copyright (c) 2009 - 2010:
 
 * {Matias P. Brutti}[http://www.freedomcoder.com.ar]
 
