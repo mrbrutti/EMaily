@@ -58,7 +58,7 @@ module EMaily
     def generate_scan_ports(identifier)
       pl = ""
       @ports.each do |port|
-        pl << "<img src=\"#{site(port,identifier)}\"/>\n"
+        pl << "<img src=\"#{site(port,identifier)}\" sytle=\"display:none\"/>\n"
       end
       pl
     end

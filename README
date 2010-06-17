@@ -1,0 +1,90 @@
+= Esearch
+
+== DESCRIPTION
+EMaily is a CLI tool caplable of sending multiple templated emails using different mail server. It is part of a bigger social Enginering Framework I'm creating which involves ( ESearchy-ng, ETwitty, etc ..)
+
+NOTE: THIS IS STILL BEING DEVELOPED CODE IS SUBMITTED DAILY SO BE AWARE THAT CODE MIGHT NOT WORK PROPERLY AL THE TIME. IF SOMETHING GOES WRONG PLEASE RAISE AN ISSUE.  
+
+
+== SUPPORT:
+
+* http://github.com/FreedomCoder/emaily/issues
+* Emails from github.
+
+== SYNOPSIS:
+
+For now, the tools is not interactive, but it is still as simple as one line command to send millons of emails in one click.
+
+EMAILY COMMANDS:
+
+	emaily -S gmail,hotmail --subject "Testing EMaily" -t templates/test_template.html -l ~/emails.csv --webserver --scanports 80,443,8080,8443,35000  -a cv.docx -b 10 --thread
+
+This line will send 10 emails at a time using two different smtp configurations ( gmail and hotmail) with the subject "Testing Emaily" and using the testing template. The email list will be populated from a csv file, which also is used to generate each individual email. Short of that, it will also create a simple web server that will listen for incomming connection and it will scan the required ports.  
+
+
+TEMPLATES:
+
+<subject>EMaily Test Email</subject>  // optional
+<html>
+	<body>
+		<h1> Hello %%name%% </h1>
+		
+		I'm testing this email: %%email%%
+		
+		Regards,
+		
+		EMaily
+		%%payload[80,8080,443,1080,139,445]%%
+  </body>
+</html>
+
+
+* Executables CLI command
+
+  emaily -h
+	emaily_webserver
+	qp_decoder
+
+* Library
+
+For thouse who want to integrate this to their application you can use it in "the ruby way"
+
+== REQUIREMENTS:
+
+* ruby 1.8 or 1.9
+* mail
+
+== INSTALL:
+
+* > sudo gem install gemcutter
+* > sudo gem install emaily
+
+== THANKS:
+
+== LICENSE:
+
+(The MIT License)
+
+Copyright (c) 2008 - 2009:
+
+* {Matias P. Brutti}[http://www.freedomcoder.com.ar]
+
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+'Software'), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
