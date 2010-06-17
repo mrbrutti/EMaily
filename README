@@ -17,6 +17,12 @@ For now, the tools is not interactive, but it is still as simple as one line com
 
 EMAILY COMMANDS:
 
+First need to add-servers with:
+	
+	emaily --add-server ...
+
+Once we have one or more server:
+
 	emaily -S gmail,hotmail --subject "Testing EMaily" -t templates/test_template.html -l ~/emails.csv --webserver --scanports 80,443,8080,8443,35000  -a cv.docx -b 10 --thread
 
 This line will send 10 emails at a time using two different smtp configurations ( gmail and hotmail) with the subject "Testing Emaily" and using the testing template. The email list will be populated from a csv file, which also is used to generate each individual email. Short of that, it will also create a simple web server that will listen for incomming connection and it will scan the required ports.  
