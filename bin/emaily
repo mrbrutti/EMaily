@@ -48,7 +48,7 @@ opts = GetoptLong.new(
   [ '--bidly', GetoptLong::NO_ARGUMENT ],
   [ '--thread', '-T' , GetoptLong::NO_ARGUMENT ],
   [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
+  [ '--site', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--proxy', GetoptLong::REQUIRED_ARGUMENT]
 )
 
