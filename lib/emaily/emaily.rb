@@ -16,7 +16,7 @@ end
 module EMaily
   @@log = false
   @@status = true
-  VERSION = 0.2
+  VERSION = 0.2.1
   
   def self.status
     @@status

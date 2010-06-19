@@ -49,6 +49,7 @@ opts = GetoptLong.new(
   [ '--thread', '-T' , GetoptLong::NO_ARGUMENT ],
   [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
+  [ '--proxy', GetoptLong::REQUIRED_ARGUMENT]
 )
 
 def logo()
@@ -126,6 +127,10 @@ opts.each do |opt, arg|
       puts "   \t Add scan payload to scan for list of ports.\n"
       puts "   --site"
       puts "   \t If not using local webserver a site is required.\n"
+      puts "   --thread, -T"
+      puts "   \t Threads each block or server acordinly.\n"
+      puts "   --proxy [127.0.0.1:8080]"
+      puts "   \t Setup a proxy.\n"
       puts "Copyright 2010 - FreedomCoder\n"
       #END OF HELP
       exit(0)
@@ -198,6 +203,11 @@ opts.each do |opt, arg|
         @thread = true
     when '--site' then
       @data[:site] = arg
+    when '--proxy' then
+      require 'socksify'
+      url, port = arg.split(":")
+      TCPSocket::socks_server = url
+      TCPSocket::socks_port = port.to_i
     else
       puts "Unknown command. Please try again"
       exit(0)

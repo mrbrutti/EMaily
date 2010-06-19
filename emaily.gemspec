@@ -1,6 +1,6 @@
 SPEC = Gem::Specification.new do |s| 
   s.name = "emaily"
-  s.version = "0.2"
+  s.version = "0.2.1"
   s.author = "Matias P. Brutti"
   s.email = "matiasbrutti@gmail.com"
   s.homepage = "http://freedomcoder.com.ar/emaily"
@@ -14,4 +14,5 @@ SPEC = Gem::Specification.new do |s|
   s.has_rdoc = false 
   s.extra_rdoc_files = ["README"] 
   s.add_dependency("mail", ">= 2.1.2")
+  s.add_dependency("socksify", ">=1.1.1") # Needed for Tor or other Proxy options
 end
