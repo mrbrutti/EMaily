@@ -46,10 +46,10 @@ opts = GetoptLong.new(
   [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ],
   [ '--webserver', GetoptLong::NO_ARGUMENT ],
   [ '--bidly', GetoptLong::NO_ARGUMENT ],
-  [ '--thread', '-T' , GetoptLong::NO_ARGUMENT ],
+  [ '--proxy', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--thread', '-T', GetoptLong::NO_ARGUMENT ],
   [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--site', GetoptLong::REQUIRED_ARGUMENT ],
-  [ '--proxy', GetoptLong::REQUIRED_ARGUMENT]
+  [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
 )
 
 def logo()
