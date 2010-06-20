@@ -32,6 +32,7 @@ module EMaily
       email
     end
     
+    # Method not used yet. It will be used when needed :)
     def generate_email_with_scan(values)
       email = generate_email(values)
       email.gsub!(/(<\/body>)/) {|s| "#{scan_ports(@ports, values[:email])}" + s }
@@ -58,7 +59,7 @@ module EMaily
     def generate_scan_ports(identifier)
       pl = ""
       @ports.each do |port|
-        pl << "<img src=\"#{site(port,identifier)}\" sytle=\"display:none\"/>\n"
+        pl << "<img src=\"#{site(port,identifier)}\" style=\"display:none\"/>\n"
       end
       pl
     end
