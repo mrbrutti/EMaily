@@ -6,4 +6,78 @@
 #  Copyright 2010 FreedomCoder's Labs. All rights reserved.
 #
 
-puts "Sorry Still haven't implemented this section."
+require 'rubygems'
+require 'getoptlong'
+require 'emaily'
+
+EMaily::log = true
+EMaily::status = true
+@data = {}
+@server = {}
+@ports = nil
+
+# Parameters
+
+# name
+# last
+# plist
+# fields
+# payload
+# domain
+# 
+
+#emaily_genlist --name 1 --last full  --plist persons.csv --fields  name,email,company,message --payload  random --domain test.com
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--version', '-v', GetoptLong::NO_ARGUMENT ],
+  [ '--nolog', '-N', GetoptLong::NO_ARGUMENT ],
+  [ '--name','-n', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--last','-l', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--plist','-p', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--fields','-f', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--payloads','-P', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--domain','-d', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--output','-o', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+opts.each do |opt, arg|
+  case opt
+    when '--help' then
+      # BEGIN OF HELP
+      logo()
+      puts "\n\nHELP for EMaily_genlist\n---------------------\n"
+      puts "   --help, -h"
+      puts "   \tWell I guess you know what this is for (To obtain this Help).\n"
+      puts "Copyright 2010 - FreedomCoder\n"
+      #END OF HELP
+      exit(0)
+    when '--version' then
+      logo()
+      puts "EMaily version #{EMaily::VERSION}"
+      exit(0)
+    when '--nolog' then
+      EMaily::log = false
+    when '--name' then
+      @name = arg.to_i
+    when '--last' then
+      @last = arg.to_i
+    when '--plist' then
+      @plist = arg
+    when '--fields' then
+      @fields = arg.split(",")
+    when '--domain' then
+      @domain = arg
+    when '--payloads' then
+      @payloads = arg
+    when '--scanports' then
+      @scanports = arg
+    when '--output' then
+      @output = arg
+    else
+      puts "Unknown command. Please try again"
+      exit(0)
+  end
+end
+

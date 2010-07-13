@@ -16,7 +16,7 @@ end
 module EMaily
   @@log = false
   @@status = true
-  VERSION = "0.2.1"
+  VERSION = "0.3"
   
   def self.status
     @@status
@@ -66,27 +66,36 @@ module EMaily
     def send
       @list.each { |p| connect(p[:email], generate_email(p)) }
     end
-        
-   #def send_block(bloc = 1, rest = 0, &block)
-   #  (@list / bloc).each do |b|
-   #    setup_server(block.call(self)) if block_given?
-   #    b.each { |p| connect p[:email], generate_email(p) }
-   #    sleep(rest) if rest != 0 && rest != nil
-   #  end
-   #end
     
-   def send_block(bloc = 1, rest = 0, thread = false, &block) 
-     threads = []
-     (@list / bloc).each do |b|
-       block.call(self) if block_given?
-       if thread        
-         threads << Thread.new { b.each { |p| connect p[:email], generate_email(p)}}
-       else
-         b.each { |p| connect p[:email], generate_email(p) }
-       end
-     end
-     threads.each { |t| t.join }
-   end
+    def send_block(bloc = 1, rest = 0, thread = false, &block) 
+      threads = [] if thread == true
+      (@list / bloc).each do |b|
+        block.call(self) if block_given?
+        if thread        
+          threads << Thread.new { b.each { |p| connect p[:email], generate_email(p)}}
+        else
+          b.each { |p| connect p[:email], generate_email(p) }
+        end
+      end
+      threads.each { |t| t.join }
+    end
+
+    def send_web
+      @list.each { |p| connect_web(@serv[0], generate_email(p)) }
+    end
+
+    def send_web_block(bloc = 1, rest = 0, thread = false, &block) 
+      threads = [] if thread == true
+      (@list / bloc).each do |b|
+        block.call(self) if block_given?
+        if thread        
+          threads << Thread.new { b.each { |p| connect_web(@serv[0], generate_email(p))}}
+        else
+          b.each { |p| connect_web(@serv[0], generate_email(p)) }
+        end
+      end
+      threads.each { |t| t.join }
+    end
     
     def send_to_random_servers(bloc = 1, rest = 0, thread = false)
       send_block(bloc, rest, thread) { setup_server(@serv[rand(@serv.size)]) }
@@ -113,6 +122,40 @@ module EMaily
         @from = server[:reply_to]
       else
         @from = @o_from || "anonymous@#{server[:domain]}"
+      end
+    end
+    
+    def handcraft_request(url, port, ssl, request_string)
+      begin
+        if ssl
+          socket = TCPSocket.new(url, port.to_i)
+          ssl_context = OpenSSL::SSL::SSLContext.new()
+          unless ssl_context.verify_mode
+             D "warning: peer certificate won't be verified this session."
+             ssl_context.verify_mode = OpenSSL::SSL::VERIFY_NONE
+          end
+          sslsocket = OpenSSL::SSL::SSLSocket.new(socket, ssl_context)
+          sslsocket.sync_close = true
+          sslsocket.connect
+          sslsocket.puts(request_string)
+          @header, @response = sslsocket.gets(nil).split("\r\n\r\n")
+        else
+          request = TCPSocket.new()
+          req = request_string
+          request.print req
+          @header, @response = request.gets(nil).split("\r\n\r\n")
+        end
+      rescue
+        puts "error: #{$!}"
+      end
+      [@header, @response]
+    end
+    
+    def connect_web(server,template)
+      begin
+        handcraft_request(server[:url], server[:port], server[:ssl], template)
+      rescue
+        D "Something went wrong sending #{email}\nError: #{$!}\n"
       end
     end
     

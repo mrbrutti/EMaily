@@ -1,0 +1,235 @@
+
+#!/usr/bin/env ruby 
+#  -wKU
+#  emaily
+#  
+#  Created by FreedomCoder on 2010-1-26.
+#  Copyright 2010 FreedomCoder's Labs. All rights reserved.
+# 
+#  IDEA: emaily_web --form test.txt --list emails.csv  --rows TO,FROM,MESSAGE,PAYLOAD
+
+require 'rubygems'
+require 'getoptlong'
+require "../lib/emaily.rb"
+
+EMaily::log = true
+EMaily::status = true
+@data = {}
+@server = {}
+@ports = nil
+
+opts = GetoptLong.new(
+  [ '--help', '-h', GetoptLong::NO_ARGUMENT ],
+  [ '--version', '-v', GetoptLong::NO_ARGUMENT ],
+  [ '--nolog', GetoptLong::NO_ARGUMENT ],
+  [ '--remove-server', GetoptLong::NO_ARGUMENT ],
+  [ '--add-server', GetoptLong::NO_ARGUMENT ],
+    [ '--name','-n', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--uri','-w', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--port','-p', GetoptLong::REQUIRED_ARGUMENT ],
+    [ '--ssl', GetoptLong::NO_ARGUMENT],
+    [ '--user','-U', GetoptLong::REQUIRED_ARGUMENT ], #Next version should have basic auth support
+    [ '--pass','-P', GetoptLong::REQUIRED_ARGUMENT ], #Next version should have basic auth support
+  [ '--form','-f', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--list','-l', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--block','-b', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--sleep','-z', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--output','-o', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--server','-S', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--webserver', GetoptLong::NO_ARGUMENT ],
+  [ '--bidly', GetoptLong::NO_ARGUMENT ],
+  [ '--proxy', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--thread', '-T', GetoptLong::NO_ARGUMENT ],
+  [ '--scanports','-X', GetoptLong::REQUIRED_ARGUMENT ],
+  [ '--site', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+def logo()
+  if  RUBY_PLATFORM =~ /mingw|mswin/ 
+    puts "___________              .__.__          "
+    puts "\\_   _____/ _____ _____  |__|  | ___.__."
+    puts "|    __)_ /     \\__  \\ |  |  |<   |  |"
+    puts "|        \\  Y Y  \\/ __ \\|  |  |_\\___  |"
+    puts "/_______  /__|_|  (____  /__|____/ ____|     W E B"
+    puts "        \\/      \\/     \\/        \\/"
+  else
+    puts "\033[31m___________\033\[0m              .__.__          "
+    puts "\033[31m\\_   _____/\033\[0m_____ _____   |__|  | ___.__."
+    puts "\033[31m|    __)\033\[0m _/     \\__   \\  |  |  |<   |  |"
+    puts "\033[31m|        \\\033\[0m   Y Y  \\/ __ \\|  |  |_\\___  |"
+    puts "\033[31m/_______  /\033\[0m__|_|  (____  /__|____/ ____|    W E B"
+    puts "\033[31m        \\/\033\[0m      \\/     \\/        \\/    "
+  end
+end
+
+opts.each do |opt, arg|
+  case opt
+    when '--help' then
+      # BEGIN OF HELP
+      logo()
+      puts "\n\nHELP for EMaily_web\n---------------------\n"
+      puts "   --help, -h"
+      puts "   \tWell I guess you know what this is for (To obtain this Help).\n"
+      puts "   --nolog"
+      puts "   \tTells EMaily not to output to STDOUT.\n"
+      puts "   ADD SERVER:"
+      puts "   --add-server "
+      puts "   \t --name, -n [name]\n"
+      puts "   \t\t The name we will use to refer it.\n"
+      puts "   \t --uri, -w [smtp.server.com]"
+      puts "   \t\t The web server's uri.\n"
+      puts "   \t--port, -p [number]"
+      puts "   \t\t The web server's port.\n"
+      puts "   \t--ssl"
+      puts "   \t\t If the site is HTTPS.\n"
+      puts "   --user, -U [username]"
+      puts "   \t The server's basic auth username .\n"
+      puts "   --pass, -P [password]"
+      puts "   \t The server's basic auth password .\n\n"
+      puts "   INPUT VARIABLES"
+      puts "   --form, -f [name/path]\n"
+      puts "   \t The template path or name"
+      puts "   --list, -l"
+      puts "   \tThe CSV file that will populate the templates.\n"
+      puts "   --server, -S [name]\n"
+      puts "   \t The server/s to send emails\n"
+      puts "   --block, -b"
+      puts "   \t Size of email blocks to send at one time.\n"
+      puts "   --sleep. -z"
+      puts "   \t Sleep time among blocks of emails.\n"
+      puts "   --webserver"
+      puts "   \t Creates a web server to listen on ports declared by --scan_ports.\n"
+      puts "   --scanports [80,443,8080,22]"
+      puts "   \t Add scan payload to scan for list of ports.\n"
+      puts "   --site"
+      puts "   \t If not using local webserver a site is required.\n"
+      puts "   --thread, -T"
+      puts "   \t Threads each block or server acordinly.\n"
+      puts "   --proxy [127.0.0.1:8080]"
+      puts "   \t Setup a proxy.\n"
+      puts "Copyright 2010 - FreedomCoder\n"
+      #END OF HELP
+      exit(0)
+    when '--version' then
+      logo()
+      puts "EMaily_web version #{EMaily::VERSION}"
+      exit(0)
+    when '--nolog' then
+      EMaily::log = false
+    # ADD / REMOVE SERVER
+    when '--add-server' then
+      @add_server = true
+    when '--remove-server' then
+      @remove_server = true
+    when '--name' then
+      @server_name = arg
+    when '--uri' then
+      @server[:address] = arg
+    when '--port' then
+      @server[:port] = arg.to_i
+    when '--user' then
+      @server[:user_name] = arg
+    when '--pass' then
+      @server[:password] = arg
+    when '--ssl' then
+      @server[:enable_starttls_auto] = true
+    # END ADD / REMOVE SERVER
+    when '--block' then
+      @block = arg.to_i
+    when '--sleep' then
+      @sleep = arg.to_i
+    when '--form' then
+      if File.exist?(arg)
+        @data[:template] = arg
+      else
+        puts "The template path/file does not exists"
+        exit(0)
+      end
+    when '--list' then
+      @data[:list] = arg
+    when '--server' then
+      @data[:servers] = arg.chomp.split(",")
+    when '--webserver' then
+      @webserver = true
+    when '--scanports' then
+        @ports = arg.split(",").map {|p| p.to_i} if arg != nil
+    when '--bidly' then
+        @data[:bidly] = true
+    when '--thread' then
+        @thread = true
+    when '--site' then
+      @data[:site] = arg
+    when '--proxy' then
+      require 'socksify'
+      url, port = arg.split(":")
+      TCPSocket::socks_server = url
+      TCPSocket::socks_port = port.to_i
+    else
+      puts "Unknown command. Please try again"
+      exit(0)
+  end
+end
+
+def add_server
+  servers = EMaily::Servers.load
+  servers.create(@server_name, @server)
+  servers.flush
+end
+
+def remove_server
+  servers = EMaily::Servers.load
+  servers.delete(@server_name)
+  server.flush
+end
+
+def execute
+  @session = EMaily::Email.new(@data)
+  if @webserver
+    webserver = EMaily::WebServers.new(@ports || @session.ports)
+    webserver.create_scan_server
+    webserver.run
+  end
+  
+  @block != nil ? @session.send_web_block(@block, @sleep, @thread || false) : @session.send_web
+
+  if @webserver
+    puts "If you no longer want to listen for incomming connecionts."
+    puts "Press Control + C to close EMaily"
+    trap("INT") do 
+      webserver.stop
+      webserver.parsedata
+      EMaily::status = false
+    end
+    while EMaily::status
+      sleep(1)
+    end
+  end
+end
+
+logo()
+puts "\n"                                            
+puts "DISCLOSURE: This code is not bug free. If you find one do not hesitate to report it."
+puts "All bugs are greatly appreciate it."
+puts "------------------------------------------------------------------------"
+
+if @add_server
+  add_server
+  D "Server #{@name} created."
+  exit(1)
+elsif @remove_server
+  remove_server
+  D "Server #{@name} deleted."
+  exit(1)
+end
+
+if @data[:servers] == nil
+  D "You need to add at least 1 server."
+  exit(0)
+end
+
+unless @data.empty?
+  execute
+end
+
+puts "\n------------------------"
+puts "Happy Hacking :)\nGood Bye.\n"

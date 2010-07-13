@@ -14,10 +14,13 @@ module EMaily
         @templete = file.to_s
       end
       @c = content_type
-      if ports
+      if ports != nil
         @port = ports
-      else @templete.match(/%%payload\[(.*)\]%%/) !=nil
+      elsif @templete.match(/%%payload\[(.*)\]%%/) != nil
+        puts "I'm here"
         @ports = @templete.scan(/%%payload\[(.*)\]%%/)[0][0].split(",").map {|p| p.to_i}
+      else
+        @ports = Array.new
       end
       @site = site
     end
@@ -31,7 +34,7 @@ module EMaily
       email.gsub!(/%%payload\[.*\]%%/) { |pl| generate_scan_ports(values[:email])}
       email
     end
-    
+       
     # Method not used yet. It will be used when needed :)
     def generate_email_with_scan(values)
       email = generate_email(values)
