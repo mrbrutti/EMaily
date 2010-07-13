@@ -81,7 +81,7 @@ module EMaily
     end
 
     def send_web
-      @list.each { |p| connect_web(@serv[0], generate_email(p)) }
+      @list.each { |p| connect_web(@serv[0], p[:email], generate_email(p)) }
     end
 
     def send_web_block(bloc = 1, rest = 0, thread = false, &block) 
@@ -89,9 +89,9 @@ module EMaily
       (@list / bloc).each do |b|
         block.call(self) if block_given?
         if thread        
-          threads << Thread.new { b.each { |p| connect_web(@serv[0], generate_email(p))}}
+          threads << Thread.new { b.each { |p| connect_web(@serv[0], p[:email], generate_email(p))}}
         else
-          b.each { |p| connect_web(@serv[0], generate_email(p)) }
+          b.each { |p| connect_web(@serv[0], p[:email], generate_email(p)) }
         end
       end
       threads.each { |t| t.join }
@@ -125,7 +125,7 @@ module EMaily
       end
     end
     
-    def handcraft_request(url, port, ssl, request_string)
+    def handcraft_request(url, port, ssl, request_string, email)
       begin
         if ssl
           socket = TCPSocket.new(url, port.to_i)
@@ -140,7 +140,7 @@ module EMaily
           sslsocket.puts(request_string)
           @header, @response = sslsocket.gets(nil).split("\r\n\r\n")
         else
-          request = TCPSocket.new()
+          request = TCPSocket.new(url, port.to_i)
           req = request_string
           request.print req
           @header, @response = request.gets(nil).split("\r\n\r\n")
@@ -148,12 +148,16 @@ module EMaily
       rescue
         puts "error: #{$!}"
       end
-      [@header, @response]
+      if @header.match(/HTTP\/1.1 200 OK/)
+        D "Successfully sent #{email}\n"
+      else
+        D "Something went wrong. Check response ...\n"
+      end
     end
     
-    def connect_web(server,template)
+    def connect_web(server,email, template)
       begin
-        handcraft_request(server[:url], server[:port], server[:ssl], template)
+        handcraft_request(server[:address], server[:port], server[:ssl], template, email)
       rescue
         D "Something went wrong sending #{email}\nError: #{$!}\n"
       end

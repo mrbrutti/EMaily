@@ -1,4 +1,3 @@
-
 #!/usr/bin/env ruby 
 #  -wKU
 #  emaily
@@ -10,7 +9,7 @@
 
 require 'rubygems'
 require 'getoptlong'
-require "../lib/emaily.rb"
+require 'emaily'
 
 EMaily::log = true
 EMaily::status = true

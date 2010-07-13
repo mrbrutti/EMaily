@@ -7,7 +7,7 @@ SPEC = Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.summary = "A library to send template to multiple emails."
   s.files = Dir["lib/**/*.*"] + Dir["bin/**/*.*"] + Dir["templates/**/*.*"]
-  %w{emaily emaily_genlist emaily_webserver qp_decoder}.each do |command_line_utility|
+  %w{emaily emaily_genlist emaily_web emaily_webserver qp_decoder}.each do |command_line_utility|
     s.executables << command_line_utility
   end
   s.require_path = "lib"
